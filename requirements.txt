@@ -1,0 +1,4 @@
+# requirements for ollama model manager package ollamacide
+
+pytest
+Pillow
