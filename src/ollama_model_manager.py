@@ -196,9 +196,17 @@ def on_delete():
         messagebox.showwarning("No Selection", "Please select a model to delete.")
         return
 
-    confirm = messagebox.askyesno("Confirm Delete",
-                                  f"Are you sure you want to delete the selected models?\n\n"
-                                  "This will remove their manifests and any unreferenced blobs!")
+    if len(selected_items) == 1:
+        item = selected_items[0]
+        prefix, tag, *_ = model_treeview.item(item, "values")
+        single_model_name = f"{prefix}:{tag}"
+        confirm_text = (f"Are you sure you want to delete model '{single_model_name}'?\n\n"
+                        "This will remove its manifest and any unreferenced blobs!")
+    else:
+        confirm_text = (f"Are you sure you want to delete the {len(selected_items)} selected models?\n\n"
+                        "This will remove their manifests and any unreferenced blobs!")
+
+    confirm = messagebox.askyesno("Confirm Delete", confirm_text)
     if confirm:
         for item in selected_items:
             model_name = model_treeview.item(item, "values")[0] + ":" + model_treeview.item(item, "values")[1]
@@ -220,6 +228,14 @@ def on_selection_change():
     """
     selected_items = [item for item in model_treeview.get_children() if model_treeview.item(item, "tags") == ("checked",)]
     delete_button.config(state=tk.NORMAL if selected_items else tk.DISABLED)
+
+def on_treeview_click(event):
+    item_id = model_treeview.identify_row(event.y)
+    if item_id:
+        var = checkbutton_vars.get(item_id)
+        if var is not None:
+            var.set(0 if var.get() else 1)
+            on_check(var, item_id)
 
 if __name__ == "__main__":
     # Global references for the GUI
@@ -309,6 +325,9 @@ if __name__ == "__main__":
 
     # Bind the selection change event
     model_treeview.bind("<<TreeviewSelect>>", lambda e: on_selection_change())
+
+    # Bind the click event to toggle checkboxes
+    model_treeview.bind("<ButtonRelease-1>", on_treeview_click)
 
     # Delete button
     delete_button = tk.Button(root, text="Delete Model", command=on_delete, state=tk.DISABLED)
